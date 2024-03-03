@@ -1,85 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import {
-  SDKProvider,
-  useMainButton,
-  useBackButton,
-  useInitData,
-  DisplayGate,
-} from '@tma.js/sdk-react';
-
-function MainButton() {
-  const mb = useMainButton();
-  const bb = useBackButton();
-
-  const [count, setCount] = useState(0);
-
-  useEffect(() => {
-    const removeMainButtonClick = mb.on('click', () => {
-      setCount((prevCount) => prevCount + 1);
-    });
-    const removeBackButtonClick = bb.on('click', () => {
-      setCount((prevCount) => prevCount - 1)
-    });
-
-    return () => {
-      removeMainButtonClick();
-      removeBackButtonClick();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  // When component mounted, display Main Button.
-  useEffect(() => {
-    mb.enable().show();
-  }, [mb])
-
-  useEffect(() => {
-    mb.setText(`Count is ${count}`);
-  }, [mb, count]);
-
-  useEffect(() => {
-    if (count === 0) {
-      bb.hide();
-      return;
-    }
-    bb.show();
-  }, [bb, count]);
-
-  return null;
-}
-
-/**
- * Displays current application init data.
- */
-function InitData() {
-  const initData = useInitData();
-
-  const initDataJson = useMemo(() => {
-    if (!initData) {
-      return 'Init data is empty.';
-    }
-    const { authDate, chat, hash, canSendAfter, queryId, receiver, user, startParam } = initData;
-
-    return JSON.stringify({
-      authDate,
-      chat,
-      hash,
-      canSendAfter,
-      queryId,
-      receiver,
-      user,
-      startParam,
-    }, null, ' ');
-  }, [initData]);
-
-  return (
-    <pre>
-      <code>
-        {initDataJson}
-      </code>
-    </pre>
-  );
-}
+import { SDKProvider, DisplayGate } from "@tma.js/sdk-react";
+import { App } from "./pages";
 
 interface SDKProviderErrorProps {
   error: unknown;
@@ -91,9 +11,7 @@ function SDKProviderError({ error }: SDKProviderErrorProps) {
       Oops. Something went wrong.
       <blockquote>
         <code>
-          {error instanceof Error
-            ? error.message
-            : JSON.stringify(error)}
+          {error instanceof Error ? error.message : JSON.stringify(error)}
         </code>
       </blockquote>
     </div>
@@ -113,14 +31,15 @@ function SDKInitialState() {
  */
 export function Root() {
   return (
-    <SDKProvider options={{ acceptCustomStyles: true, cssVars: true, async: true }}>
+    <SDKProvider
+      options={{ acceptCustomStyles: true, cssVars: true, async: true }}
+    >
       <DisplayGate
         error={SDKProviderError}
         loading={SDKProviderLoading}
         initial={SDKInitialState}
       >
-        <MainButton/>
-        <InitData/>
+        <App />
       </DisplayGate>
     </SDKProvider>
   );
