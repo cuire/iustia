@@ -3,5 +3,6 @@
         "editor.defaultFormatter": "charliermarsh.ruff",
         "editor.formatOnSave": true
     },
+    "python.analysis.extraPaths": ["./stubs"],
     "isort.args": ["--settings-path", "./"],
 }
