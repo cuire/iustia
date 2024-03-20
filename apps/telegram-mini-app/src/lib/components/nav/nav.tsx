@@ -14,7 +14,7 @@ export const Nav: React.FC = () => {
   const [location] = useLocation();
 
   return (
-    <nav className="sticky bottom-0 left-0 z-50 w-full h-16 border-t border-gray-200 bg-base-200 dark:border-gray-600">
+    <nav className="sticky bottom-0 left-0 z-30 w-full h-16 border-t border-gray-200 bg-base-200 dark:border-gray-600">
       <div className="grid h-full max-w-lg grid-cols-3 mx-auto">
         {links.map((link) => (
           <Link key={link.href} href={link.href}>
