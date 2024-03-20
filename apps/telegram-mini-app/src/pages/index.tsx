@@ -7,8 +7,8 @@ import { Theme } from "./debug/theme";
 import Nav from "../lib/components/nav/";
 
 export const App = () => (
-  <main className="flex flex-col min-h-screen text-base-content">
-    <div className="flex-1 p-6 bg-base-100">
+  <main className="flex flex-col h-screen text-base-content overflow-hidden">
+    <div className="flex-1 p-6 bg-base-100 relative">
       <Switch>
         <Route path="/" component={GalleryRoute} />
 
