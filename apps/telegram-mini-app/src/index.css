@@ -1,3 +1,12 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.stack {
+    @apply grid;
+}
+
+.stack > * {
+    @apply col-start-1 row-start-1;
+    transform: translateY(10%) scale(0.9);
+}
