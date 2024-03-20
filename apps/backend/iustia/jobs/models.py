@@ -3,6 +3,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from iustia.core.models import BaseModel
+from iustia.jobs.validators import TrustedImageHostValidator
 
 User = get_user_model()
 
@@ -154,3 +155,24 @@ class Job(BaseModel):
 
     def __str__(self):
         return f"{self.company} - {self.title}"
+
+
+class JobImage(BaseModel):
+    job = models.ForeignKey(
+        "jobs.Job",
+        on_delete=models.CASCADE,
+        related_name="images",
+    )
+    image_url = models.URLField(
+        _("Image URL"),
+        blank=False,
+        null=False,
+        validators=[TrustedImageHostValidator()],
+    )
+
+    class Meta:
+        verbose_name = _("Job Image")
+        verbose_name_plural = _("Job Images")
+
+    def __str__(self):
+        return f"{self.job} - {self.image_url}"

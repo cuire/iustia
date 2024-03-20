@@ -95,3 +95,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, "public_html/static")
 STATICFILES_DIRS = [os.path.join(BASE_DIR, "static")]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+TRUSTED_IMAGE_HOSTS = config(
+    "TRUSTED_IMAGE_HOSTS", default="localhost,images.unsplash.com", cast=Csv()
+)
