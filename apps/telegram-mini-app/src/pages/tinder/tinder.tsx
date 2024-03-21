@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import TinderCard from "react-tinder-card";
 
 import { Dislike, Icon, Info, Like } from "$lib/components/icon";
@@ -28,9 +28,26 @@ type CardProps = {
   images?: string[];
   title: string;
   description: string;
+
+  onLike?: () => void;
+  onDislike?: () => void;
 };
 
-const Card: React.FC<CardProps> = ({ title }) => {
+const Card: React.FC<CardProps> = (props) => {
+  const { title } = props;
+
+  function handleLike() {
+    if (props.onLike) {
+      props.onLike();
+    }
+  }
+
+  function handleDislike() {
+    if (props.onDislike) {
+      props.onDislike();
+    }
+  }
+
   return (
     <>
       <figure className="relative h-full w-full rounded-xl overflow-hidden flex flex-col-reverse border-2 border-base-200">
@@ -42,13 +59,13 @@ const Card: React.FC<CardProps> = ({ title }) => {
         />
 
         <div className="flex justify-center space-x-7 bg-white/75 dark:bg-black/75 pb-4">
-          <button className="btn btn-circle">
+          <button className="btn btn-circle" onClick={handleLike}>
             <Icon icon={Like} solid />
           </button>
           <button className="btn btn-circle">
             <Icon icon={Info} />
           </button>
-          <button className="btn btn-circle">
+          <button className="btn btn-circle" onClick={handleDislike}>
             <Icon icon={Dislike} />
           </button>
         </div>
@@ -70,6 +87,37 @@ const Card: React.FC<CardProps> = ({ title }) => {
         </div>
       </figure>
     </>
+  );
+};
+
+const TinderJobCard: React.FC<CardProps> = (props) => {
+  const ref = useRef<{
+    swipe: (dir: "left" | "right" | "up" | "down") => Promise<void>;
+    restoreCard: () => Promise<void>;
+  }>(null);
+
+  const handleLike = () => {
+    ref.current?.swipe("left");
+  };
+
+  const handleDislike = () => {
+    ref.current?.swipe("right");
+  };
+
+  return (
+    <TinderCard
+      className="h-full w-full overflow-hidden select-none"
+      preventSwipe={["up", "down"]}
+      onSwipe={(dir) => console.log(dir)}
+      ref={ref}
+    >
+      <Card
+        title={props.title}
+        description={props.title}
+        onLike={handleLike}
+        onDislike={handleDislike}
+      />
+    </TinderCard>
   );
 };
 
@@ -102,13 +150,11 @@ export const TinderRoute: React.FC = () => {
       <div className="flex flex-col h-full gap-6">
         <div className="h-full w-full stack">
           {cards.map((cardId) => (
-            <TinderCard
-              className="h-full w-full overflow-hidden select-none"
-              preventSwipe={["up", "down"]}
-              onSwipe={(dir) => console.log(dir)}
-            >
-              <Card title={job.title} description={job.title} key={cardId} />
-            </TinderCard>
+            <TinderJobCard
+              title={job.title}
+              description={job.title}
+              key={cardId}
+            />
           ))}
         </div>
       </div>
