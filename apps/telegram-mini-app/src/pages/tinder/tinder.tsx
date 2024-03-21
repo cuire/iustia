@@ -1,7 +1,7 @@
 import { useState } from "react";
 import TinderCard from "react-tinder-card";
 
-import { Icon, Like } from "$lib/components/icon";
+import { Dislike, Icon, Info, Like } from "$lib/components/icon";
 
 const job = {
   id: 1,
@@ -46,10 +46,10 @@ const Card: React.FC<CardProps> = ({ title }) => {
             <Icon icon={Like} solid />
           </button>
           <button className="btn btn-circle">
-            <Icon icon={Like} />
+            <Icon icon={Info} />
           </button>
           <button className="btn btn-circle">
-            <Icon icon={Like} />
+            <Icon icon={Dislike} />
           </button>
         </div>
 
