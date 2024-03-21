@@ -10,3 +10,41 @@
     @apply col-start-1 row-start-1;
     transform: translateY(10%) scale(0.9);
 }
+
+
+.btn {
+    @apply inline-block px-4 py-2 text-primary-content 
+           bg-primary hover:bg-primary-focus rounded-xl
+           border border-primary shadow-md;
+    animation: button-pop var(--animation-btn, 0.5s) ease-out;
+
+    --btn-color: var(--tg-theme-button-color);
+}
+
+.btn:active:hover, .btn:active:focus {
+    animation: button-pop 0s ease-out;
+    transform: scale(var(--btn-focus-scale, 0.97));
+}
+
+.btn-circle {
+    @apply rounded-full aspect-square;
+}
+
+
+@keyframes button-pop {
+    0% {
+      transform: scale(var(--btn-focus-scale, 0.98));
+    }
+    40% {
+      transform: scale(1.02);
+    }
+    100% {
+      transform: scale(1);
+    }
+}
+
+@media (hover: hover) {
+    .btn:hover {
+      @apply !border-secondary !bg-secondary;
+    }
+  }
