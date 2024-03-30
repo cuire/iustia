@@ -19,6 +19,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_filters",
     "rest_framework",
     "rest_access_policy",
     "iustia.core",
@@ -99,3 +100,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 TRUSTED_IMAGE_HOSTS = config(
     "TRUSTED_IMAGE_HOSTS", default="localhost,images.unsplash.com", cast=Csv()
 )
+
+REST_FRAMEWORK = {
+    "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
+}
