@@ -11,6 +11,7 @@ class JobImageInline(admin.TabularInline):
 @admin.register(Job)
 class JobAdmin(admin.ModelAdmin):
     inlines = [JobImageInline]
+    filter_horizontal = ("tags",)
 
 
 admin.site.register(Company)

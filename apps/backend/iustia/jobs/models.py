@@ -149,6 +149,13 @@ class Job(BaseModel):
         default=True,
     )
 
+    tags = models.ManyToManyField(
+        "tags.Tag",
+        verbose_name=_("Tags"),
+        related_name="jobs",
+        blank=True,
+    )
+
     class Meta:
         verbose_name = _("Job")
         verbose_name_plural = _("Jobs")

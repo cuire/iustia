@@ -1,5 +1,7 @@
 from rest_framework import serializers
 
+from iustia.tags.serializers import TagSerializer
+
 from .models import Company, Job, JobImage
 
 
@@ -26,6 +28,7 @@ class JobImageSerializer(serializers.ModelSerializer):
 
 class JobSerializer(serializers.ModelSerializer):
     images = JobImageSerializer(many=True, read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
 
     class Meta:
         model = Job
@@ -38,4 +41,5 @@ class JobSerializer(serializers.ModelSerializer):
             "job_type",
             "is_active",
             "images",
+            "tags",
         ]

@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_access_policy",
     "iustia.core",
+    "iustia.tags",
     "iustia.jobs",
 ]
 
