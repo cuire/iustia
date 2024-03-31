@@ -105,6 +105,8 @@ TRUSTED_IMAGE_HOSTS = config(
 
 REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
+    "DEFAULT_PAGINATION_CLASS": "iustia.core.pagination.StandardResultsSetPagination",
+    "PAGE_SIZE": config("REST_PAGE_SIZE", default=30, cast=int),
 }
 
 CORS_ALLOWED_ORIGINS = config(

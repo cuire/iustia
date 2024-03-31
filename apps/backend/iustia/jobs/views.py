@@ -19,6 +19,9 @@ class JobViewSet(viewsets.ModelViewSet):
     filter_class = JobFilterSet
     filter_backends = (filters.DjangoFilterBackend, RandomOrderFilter)
 
+    page_size_query_param = "page_size"
+    max_page_size = 100
+
 
 class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.all()
