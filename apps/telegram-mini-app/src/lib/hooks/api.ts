@@ -16,7 +16,12 @@ type ApiResult<T> = {
   results: T[];
 };
 
-type Vacancy = {
+export type Tag = {
+  tag: string;
+  slug: string;
+};
+
+export type Vacancy = {
   id: number;
   title: string;
   description: string;
@@ -25,6 +30,7 @@ type Vacancy = {
   job_type: "full_time" | "part_time" | "contract" | "internship";
   is_active: boolean;
   images: { image_url: string }[];
+  tags: Tag[];
 };
 
 export function useVacancies() {

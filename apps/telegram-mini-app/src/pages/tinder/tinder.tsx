@@ -2,16 +2,25 @@ import { useRef } from "react";
 import TinderCard from "react-tinder-card";
 
 import { Dislike, Icon, Info, Like } from "$lib/components/icon";
-import { useVacancies } from "$lib/hooks/api";
+import { useVacancies, type Tag as TagType } from "$lib/hooks/api";
 
 type CardProps = {
   className?: string;
   image?: string;
   title: string;
   description: string;
+  tags?: TagType[];
 
   onLike?: () => void;
   onDislike?: () => void;
+};
+
+const Tag: React.FC<TagType> = (props) => {
+  return (
+    <div className="px-2 py-1 bg-base-200 text-base-content rounded-full">
+      {props.tag}
+    </div>
+  );
 };
 
 const Card: React.FC<CardProps> = (props) => {
@@ -49,16 +58,23 @@ const Card: React.FC<CardProps> = (props) => {
           </div>
         )}
 
-        <div className="flex justify-center space-x-7 bg-white/75 dark:bg-black/75 pb-4">
-          <button className="btn btn-circle" onClick={handleLike}>
-            <Icon icon={Like} solid />
-          </button>
-          <button className="btn btn-circle">
-            <Icon icon={Info} />
-          </button>
-          <button className="btn btn-circle" onClick={handleDislike}>
-            <Icon icon={Dislike} />
-          </button>
+        <div className="bg-white/75 dark:bg-black/75 pb-4">
+          {props.tags && props.tags.length > 0 && (
+            <div className="flex gap-1 px-4 py-2">
+              {props.tags?.map((tag) => <Tag key={tag.slug} {...tag} />)}
+            </div>
+          )}
+          <div className="flex justify-center space-x-7">
+            <button className="btn btn-circle" onClick={handleLike}>
+              <Icon icon={Like} solid />
+            </button>
+            <button className="btn btn-circle">
+              <Icon icon={Info} />
+            </button>
+            <button className="btn btn-circle" onClick={handleDislike}>
+              <Icon icon={Dislike} />
+            </button>
+          </div>
         </div>
 
         <div className="p-4 rounded-t-xl max-h-[80%] relative overflow-visible">
@@ -116,6 +132,7 @@ const TinderJobCard: React.FC<CardProps> = (props) => {
         image={props.image}
         onLike={handleLike}
         onDislike={handleDislike}
+        tags={props.tags}
       />
     </TinderCard>
   );
@@ -134,6 +151,7 @@ export const TinderRoute: React.FC = () => {
               image={card.images[0]?.imageUrl}
               key={card.id}
               onLike={like}
+              tags={card.tags}
             />
           ))}
         </div>
