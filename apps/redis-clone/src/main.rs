@@ -1,41 +1,55 @@
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+mod commands;
+mod connection;
+mod db;
+mod resp;
+
 use tokio::net::TcpListener;
+
+use crate::commands::CommandTrait;
+use crate::connection::Connection;
+use crate::resp::RespValue;
 
 #[tokio::main]
 async fn main() {
     let listener = TcpListener::bind("127.0.0.1:6379").await.unwrap();
+
+    let db_holder = db::DbHolder::new();
+
     println!("Server started at 127.0.0.1:6379");
 
     loop {
-        let (mut stream, _) = listener.accept().await.unwrap();
+        let db = db_holder.db();
+
+        let (stream, _) = listener.accept().await.unwrap();
 
         tokio::spawn(async move {
             println!("Accepted new connection");
 
-            let mut buffer = [0; 1024];
+            let mut connection = Connection::new(stream);
 
             loop {
-                match stream.read(&mut buffer).await {
-                    Ok(0) => {
-                        // The client has closed the connection
-                        println!("Connection closed");
+                let request = match connection.read().await {
+                    Ok(request) => request,
+                    Err(connection::ConnectionError::ResetByPeer) => {
+                        println!("Connection reset by peer");
                         break;
                     }
-                    Ok(_n) => {
-                        // let received = String::from_utf8_lossy(&buffer[..n]);
-                        // println!("Received: {}", received);
+                    Err(_) => {
+                        println!("Failed to read from connection");
+                        continue;
+                    }
+                };
 
-                        let response = "+PONG\r\n";
-                        if let Err(e) = stream.write_all(response.as_bytes()).await {
-                            println!("Failed to write to connection: {}", e);
-                            break;
-                        }
+                match commands::Command::from_resp(request) {
+                    Ok(command) => {
+                        command.execute(&db, &mut connection).await;
                     }
-                    Err(e) => {
-                        println!("Failed to read from connection: {}", e);
-                        break;
+                    Err(_) => {
+                        connection
+                            .write(RespValue::SimpleError("ERR unknown command".to_string()))
+                            .await
                     }
-                }
+                };
             }
         });
     }
