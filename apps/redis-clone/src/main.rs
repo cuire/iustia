@@ -3,19 +3,33 @@ mod connection;
 mod db;
 mod resp;
 
+use clap::Parser;
 use tokio::net::TcpListener;
 
 use crate::commands::CommandTrait;
 use crate::connection::Connection;
 use crate::resp::RespValue;
 
+const DEFAULT_PORT: u16 = 6379;
+
+#[derive(clap::Parser, Debug)]
+#[clap()]
+struct Cli {
+    #[clap(long)]
+    port: Option<u16>,
+}
+
 #[tokio::main]
 async fn main() {
-    let listener = TcpListener::bind("127.0.0.1:6379").await.unwrap();
+    let cli = Cli::parse();
+    let port = cli.port.unwrap_or(DEFAULT_PORT);
+    let address = &format!("127.0.0.1:{}", port);
+
+    let listener = TcpListener::bind(address).await.unwrap();
 
     let db_holder = db::DbHolder::new();
 
-    println!("Server started at 127.0.0.1:6379");
+    println!("Server started at {}", address);
 
     loop {
         let db = db_holder.db();
@@ -44,7 +58,8 @@ async fn main() {
                     Ok(command) => {
                         command.execute(&db, &mut connection).await;
                     }
-                    Err(_) => {
+                    Err(e) => {
+                        println!("ERR unknown command {:?}", e);
                         connection
                             .write(RespValue::SimpleError("ERR unknown command".to_string()))
                             .await
