@@ -1,5 +1,7 @@
 use std::str::FromStr;
 
+use anyhow::Error;
+
 const CRLF: &[u8] = b"\r\n";
 
 /*
@@ -44,6 +46,17 @@ impl RespValue {
     /// Returns a byte vector containing the serialized `RespValue`.
     pub(crate) fn to_buf(&self) -> Vec<u8> {
         encode_resp(self)
+    }
+
+    pub fn as_integer(&self) -> Result<i64, Error> {
+        match self {
+            RespValue::Integer(i) => Ok(*i),
+            RespValue::BulkString(s) => {
+                let val_as_str = std::str::from_utf8(s).unwrap();
+                Ok(val_as_str.parse().unwrap())
+            }
+            _ => Err(anyhow::anyhow!("Invalid value")),
+        }
     }
 }
 

@@ -53,23 +53,19 @@ impl CommandTrait for Set {
                     RespValue::BulkString(s) => {
                         match String::from_utf8_lossy(&s).to_lowercase().as_str() {
                             "ex" => {
-                                let expire_resp = arr[4].clone();
-                                if let RespValue::Integer(expire) = expire_resp {
-                                    Some(Duration::from_secs(expire as u64))
-                                } else {
-                                    return Err(anyhow::anyhow!("Invalid arguments"));
-                                }
+                                let expire_resp = &arr[4].as_integer()?;
+                                Some(Duration::from_secs(*expire_resp as u64))
                             }
 
                             "px" => {
-                                let expire_resp = &arr[4];
-                                if let RespValue::Integer(expire) = expire_resp {
-                                    Some(Duration::from_millis(*expire as u64))
-                                } else {
-                                    return Err(anyhow::anyhow!("Invalid arguments"));
-                                }
+                                let expire_resp = &arr[4].as_integer()?;
+                                Some(Duration::from_millis(*expire_resp as u64))
                             }
-                            _ => return Err(anyhow::anyhow!("Invalid arguments")),
+                            _ => {
+                                return Err(anyhow::anyhow!(
+                                    "Invalid arguments, expected 'ex' or 'px'"
+                                ))
+                            }
                         }
                     }
                     _ => None,
