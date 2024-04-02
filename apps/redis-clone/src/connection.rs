@@ -40,6 +40,7 @@ impl Connection {
 
             match RespValue::from_bytes(&self.buffer) {
                 Ok(resp) => {
+                    self.buffer.clear();
                     return Ok(resp);
                 }
                 // If we don't have a full response yet,
