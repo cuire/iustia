@@ -48,3 +48,21 @@
       @apply !border-secondary !bg-secondary;
     }
   }
+
+.card-overlay {
+    @apply bg-white/75 dark:bg-black/75;
+}
+
+.card-gradient {
+    @apply bg-gradient-to-t from-primary to-transparent;
+}
+
+.bg-base-100\/75 {
+    background-color: rgb(from var(--tg-theme-background-color) r g b / 0.75);
+}
+
+.from-base-100\/75 {
+  --tw-gradient-from: rgb(from var(--tg-theme-background-color) r g b / 0.75) var(--tw-gradient-from-position);
+  --tw-gradient-to: rgb(from var(--tg-theme-background-color) r g b / 0) var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}

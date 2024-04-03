@@ -58,7 +58,7 @@ const Card: React.FC<CardProps> = (props) => {
           </div>
         )}
 
-        <div className="bg-white/75 dark:bg-black/75 pb-4">
+        <div className="bg-base-100/75 pb-4">
           {props.tags && props.tags.length > 0 && (
             <div className="flex gap-1 px-4 py-2">
               {props.tags?.map((tag) => <Tag key={tag.slug} {...tag} />)}
@@ -78,7 +78,7 @@ const Card: React.FC<CardProps> = (props) => {
         </div>
 
         <div className="p-4 rounded-t-xl max-h-[80%] relative overflow-visible">
-          <div className="absolute inset-0 -top-20 bg-gradient-to-t from-65% from-white/75 dark:from-black/75 to-transparent -z-10" />
+          <div className="absolute inset-0 -top-20 bg-gradient-to-t from-65% from-base-100/75 to-transparent -z-10" />
 
           <div className="z-10 relative">
             <blockquote>
