@@ -70,6 +70,12 @@ DATABASES = {
     }
 }
 
+DATABASE_SSL_REQUIRE = config("DATABASE_SSL_REQUIRE", default=False, cast=bool)
+
+if DATABASE_SSL_REQUIRE:
+    DATABASES["default"]["OPTIONS"] = {"sslmode": "require"}
+
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
