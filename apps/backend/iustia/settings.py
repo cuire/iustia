@@ -73,7 +73,7 @@ DATABASES = {
 DATABASE_SSL_REQUIRE = config("DATABASE_SSL_REQUIRE", default=False, cast=bool)
 
 if DATABASE_SSL_REQUIRE:
-    DATABASES["default"]["OPTIONS"] = {"sslmode": "require"}
+    DATABASES["default"]["OPTIONS"] = {"sslmode": "require"}  # type: ignore
 
 
 AUTH_PASSWORD_VALIDATORS = [
