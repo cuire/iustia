@@ -8,6 +8,9 @@ dependencies:
   '@react-spring/web':
     specifier: 9.5.5
     version: 9.5.5(react-dom@18.2.0)(react@18.2.0)
+  '@tma.js/sdk':
+    specifier: ^1.5.3
+    version: 1.5.3
   '@tma.js/sdk-react':
     specifier: ^1.1.5
     version: 1.1.5(@types/react@18.2.57)(react@18.2.0)
@@ -733,6 +736,10 @@ packages:
 
   /@tma.js/sdk@1.4.2:
     resolution: {integrity: sha512-RwqEZNkULiSn5o5/rSFBQyqi51J/hDr+qQIxC5xoTy7TmHQab88vbBibGqGu8dJOmsOXKyEhfOoCG/fo8KwpEg==}
+    dev: false
+
+  /@tma.js/sdk@1.5.3:
+    resolution: {integrity: sha512-oXWtFoiiJCzsueOrX7FFQhpljUOLY3BkxNen6J6Ri0r1gZrlu1uFKZVeCpV7KUzsNTLfIK9VQEOcNxI3zuejJA==}
     dev: false
 
   /@types/estree@1.0.5:

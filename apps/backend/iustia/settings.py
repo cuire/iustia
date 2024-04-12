@@ -114,6 +114,9 @@ REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
     "DEFAULT_PAGINATION_CLASS": "iustia.core.pagination.StandardResultsSetPagination",
     "PAGE_SIZE": config("REST_PAGE_SIZE", default=30, cast=int),
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "iustia.core.authentication.TelegramMiniAppAuth",
+    ),
 }
 
 CORS_ALLOWED_ORIGINS = config(
@@ -122,3 +125,6 @@ CORS_ALLOWED_ORIGINS = config(
     cast=Csv(),
 )
 CORS_ALLOW_ALL_ORIGINS = config("CORS_ALLOW_ALL_ORIGINS", default=False, cast=bool)
+
+# Used for Telegram Mini App authentication validation
+TELEGRAM_BOT_TOKEN = config("TELEGRAM_BOT_TOKEN")

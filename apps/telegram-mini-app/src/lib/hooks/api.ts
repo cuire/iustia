@@ -1,11 +1,9 @@
 import useSWR from "swr";
 
 import { toCamelCase } from "$lib/utils/case";
+import { retrieveLaunchParams } from "@tma.js/sdk";
 
 const backendUrl = new URL(import.meta.env.VITE_IUSTIA_BACKEND_URL);
-
-const fetcher = (url: string) =>
-  fetch(backendUrl.toString() + url).then((res) => res.json());
 
 const PAGE_SIZE = 30;
 
@@ -34,6 +32,16 @@ export type Vacancy = {
 };
 
 export function useVacancies() {
+  const headers = useAuthHeaders();
+
+  const fetcher = (url: string) =>
+    fetch(backendUrl.toString() + url, {
+      headers: {
+        ...headers,
+        "Content-Type": "application/json",
+      },
+    }).then((res) => res.json());
+
   const { data } = useSWR<ApiResult<Vacancy>>(
     `jobs/?page=1&page_size=${PAGE_SIZE}`,
     fetcher,
@@ -50,3 +58,13 @@ export function useVacancies() {
     like,
   } as const;
 }
+
+export const useAuthHeaders = () => {
+  const { initDataRaw } = retrieveLaunchParams();
+
+  const headers = {
+    Authorization: `tma ${initDataRaw}`,
+  };
+
+  return headers;
+};
