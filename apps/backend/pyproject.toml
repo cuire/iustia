@@ -35,3 +35,33 @@ exclude = [
     "venv",
     "migrations",
 ]
+
+[tool.poetry]
+name = "iustia-backend"
+version = "0.1.0"
+description = ""
+authors = ["cuire <81014305+cuire@users.noreply.github.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "iustia"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+django = "^5.0.4"
+django-cors-headers = "^4.3.1"
+django-filter = "^24.2"
+djangorestframework = "^3.15.1"
+drf-access-policy = "^1.5.0"
+gunicorn = "^21.2.0"
+psycopg2 = "^2.9.9"
+pydantic = "^2.7.0"
+python-decouple = "^3.8"
+
+[tool.poetry.group.dev.dependencies]
+mypy = "^1.9.0"
+django-stubs = "^4.2.7"
+ruff = "^0.3.7"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
