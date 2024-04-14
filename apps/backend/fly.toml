@@ -1,0 +1,28 @@
+# fly.toml app configuration file generated for iustia-backend on 2024-04-14T15:57:07+05:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'iustia-backend'
+primary_region = 'arn'
+console_command = '/code/manage.py shell'
+
+[build]
+
+[env]
+  PORT = '8000'
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  size = 'shared-cpu-1x'
+
+[[statics]]
+  guest_path = '/code/static'
+  url_prefix = '/static/'
