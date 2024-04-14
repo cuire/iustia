@@ -183,3 +183,27 @@ class JobImage(BaseModel):
 
     def __str__(self):
         return f"{self.job} - {self.image_url}"
+
+
+class JobApplication(BaseModel):
+    job = models.ForeignKey(
+        "jobs.Job",
+        verbose_name=_("Job"),
+        on_delete=models.CASCADE,
+        related_name="applications",
+    )
+
+    user = models.ForeignKey(
+        User,
+        verbose_name=_("User"),
+        on_delete=models.CASCADE,
+        related_name="applications",
+    )
+
+    class Meta:
+        verbose_name = _("Job Application")
+        verbose_name_plural = _("Job Applications")
+        unique_together = ("job", "user")
+
+    def __str__(self):
+        return f"{self.job} - {self.user}"

@@ -34,21 +34,33 @@ export type Vacancy = {
 export function useVacancies() {
   const headers = useAuthHeaders();
 
-  const fetcher = (url: string) =>
+  const fetcher = (url: string, method = "GET") =>
     fetch(backendUrl.toString() + url, {
+      method,
       headers: {
         ...headers,
         "Content-Type": "application/json",
       },
     }).then((res) => res.json());
 
-  const { data } = useSWR<ApiResult<Vacancy>>(
+  const { data, mutate } = useSWR<ApiResult<Vacancy>>(
     `jobs/?page=1&page_size=${PAGE_SIZE}`,
     fetcher,
   );
 
   function like(): void {
-    // TODO: implement like
+    // remove top item from the list
+    if (!data) return;
+
+    const vacancies = data.results;
+    // mutate pop last item
+    const vacancy = vacancies[vacancies.length - 1];
+
+    mutate({ ...data, results: vacancies.slice(0, -1) });
+
+    console.log("Liked", data);
+
+    fetcher(`jobs/${vacancy.id}/apply/`, "POST");
   }
 
   const vacancies = data?.results ?? [];
