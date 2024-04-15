@@ -1,24 +1,38 @@
 import { useEffect } from "react";
-import { useClosingBehavior } from "@tma.js/sdk-react";
-import { Route, Switch } from "wouter";
+import { useClosingBehavior, useSettingsButton } from "@tma.js/sdk-react";
+import { Route, Switch, useLocation } from "wouter";
 
 import TinderRoute from "./tinder";
-import GalleryRoute from "./gallery";
+import HelloRoute from "./hello";
 import { Theme } from "./debug/theme";
 
-import Nav from "../lib/components/nav/";
-
 export const App = () => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [_, setLocation] = useLocation();
+
   const closingBehaviour = useClosingBehavior();
+
+  const settingsButton = useSettingsButton();
+
   useEffect(() => {
     closingBehaviour.enableConfirmation();
   }, [closingBehaviour]);
+
+  useEffect(() => {
+    settingsButton.show();
+    const removeSettingsButtonClick = settingsButton.on("click", () => {
+      setLocation("/debug/theme");
+    });
+    return () => {
+      removeSettingsButtonClick();
+    };
+  }, [setLocation, settingsButton]);
 
   return (
     <main className="flex flex-col h-screen text-base-content overflow-hidden">
       <div className="flex-1 p-6 bg-base-100 relative">
         <Switch>
-          <Route path="/" component={GalleryRoute} />
+          <Route path="/" component={HelloRoute} />
 
           <Route path="/tinder" component={TinderRoute} />
 
@@ -27,8 +41,6 @@ export const App = () => {
           <Route>404: No such page!</Route>
         </Switch>
       </div>
-
-      <Nav />
     </main>
   );
 };
