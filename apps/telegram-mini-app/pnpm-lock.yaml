@@ -8,12 +8,9 @@ dependencies:
   '@react-spring/web':
     specifier: 9.5.5
     version: 9.5.5(react-dom@18.2.0)(react@18.2.0)
-  '@tma.js/sdk':
-    specifier: ^1.5.3
-    version: 1.5.3
   '@tma.js/sdk-react':
-    specifier: ^1.1.5
-    version: 1.1.5(@types/react@18.2.57)(react@18.2.0)
+    specifier: ^2.2.5
+    version: 2.2.5(@types/react@18.2.57)(react@18.2.0)
   change-case:
     specifier: ^5.4.3
     version: 5.4.3
@@ -726,8 +723,8 @@ packages:
     resolution: {integrity: sha512-myfUej5naTBWnqOCc/MdVOLVjXUXtIA+NpDrDBKJtLLg2shUjBu3cZmB/85RyitKc55+lUUyl7oRfLOvkr2hsw==}
     dev: true
 
-  /@tma.js/sdk-react@1.1.5(@types/react@18.2.57)(react@18.2.0):
-    resolution: {integrity: sha512-QZAKrub+NWs2WPmuS6VzHy5wE3ryojMLAA3Gvn4WZduATqx0sx9w/htfx45PmmELdUuC/LoAuqCbkNX/VPPusg==}
+  /@tma.js/sdk-react@2.2.5(@types/react@18.2.57)(react@18.2.0):
+    resolution: {integrity: sha512-AgKrxlVHNiwHGM9PPPcRGcmfkCDb27jnVGkaIyUX68Gk7bmpNjP/LIO82OuziFjJzTkgDkiCv5hDYxrpLjQRKA==}
     peerDependencies:
       '@types/react': ^17.0.0 || ^18.0.0
       react: ^17.0.0 || ^18.0.0
@@ -735,17 +732,13 @@ packages:
       '@types/react':
         optional: true
     dependencies:
-      '@tma.js/sdk': 1.4.2
+      '@tma.js/sdk': 2.5.1
       '@types/react': 18.2.57
       react: 18.2.0
     dev: false
 
-  /@tma.js/sdk@1.4.2:
-    resolution: {integrity: sha512-RwqEZNkULiSn5o5/rSFBQyqi51J/hDr+qQIxC5xoTy7TmHQab88vbBibGqGu8dJOmsOXKyEhfOoCG/fo8KwpEg==}
-    dev: false
-
-  /@tma.js/sdk@1.5.3:
-    resolution: {integrity: sha512-oXWtFoiiJCzsueOrX7FFQhpljUOLY3BkxNen6J6Ri0r1gZrlu1uFKZVeCpV7KUzsNTLfIK9VQEOcNxI3zuejJA==}
+  /@tma.js/sdk@2.5.1:
+    resolution: {integrity: sha512-uUFv3oINGRwkh4KbGxMq9OxDdSQOhH9O45i9i0aqen6pIakeiIxxzrF8Yhv2xSFWrn8V+gaOpr3IDrushlo5TA==}
     dev: false
 
   /@types/estree@1.0.5:

@@ -1,7 +1,7 @@
 import useSWR from "swr";
 
 import { toCamelCase } from "$lib/utils/case";
-import { retrieveLaunchParams } from "@tma.js/sdk";
+import { retrieveLaunchParams } from "@tma.js/sdk-react";
 
 const backendUrl = new URL(import.meta.env.VITE_IUSTIA_BACKEND_URL);
 

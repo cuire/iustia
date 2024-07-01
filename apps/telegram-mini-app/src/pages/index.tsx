@@ -1,5 +1,14 @@
 import { useEffect } from "react";
-import { useClosingBehavior, useSettingsButton } from "@tma.js/sdk-react";
+import {
+  bindMiniAppCSSVars,
+  bindThemeParamsCSSVars,
+  bindViewportCSSVars,
+  useClosingBehavior,
+  useMiniApp,
+  useSettingsButton,
+  useThemeParams,
+  useViewport,
+} from "@tma.js/sdk-react";
 import { Route, Switch, useLocation } from "wouter";
 
 import TinderRoute from "./tinder";
@@ -7,7 +16,6 @@ import HelloRoute from "./hello";
 import { Theme } from "./debug/theme";
 
 export const App = () => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, setLocation] = useLocation();
 
   const closingBehaviour = useClosingBehavior();
@@ -27,6 +35,22 @@ export const App = () => {
       removeSettingsButtonClick();
     };
   }, [setLocation, settingsButton]);
+
+  const miniApp = useMiniApp();
+  const themeParams = useThemeParams();
+  const viewport = useViewport();
+
+  useEffect(() => {
+    return bindMiniAppCSSVars(miniApp, themeParams);
+  }, [miniApp, themeParams]);
+
+  useEffect(() => {
+    return bindThemeParamsCSSVars(themeParams);
+  }, [themeParams]);
+
+  useEffect(() => {
+    return viewport && bindViewportCSSVars(viewport);
+  }, [viewport]);
 
   return (
     <main className="flex flex-col h-screen text-base-content overflow-hidden">

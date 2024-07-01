@@ -3,12 +3,11 @@ import { useEffect } from "react";
 import { useLocation } from "wouter";
 import Lottie from "lottie-react";
 
-import plane from "$lib/assets/plane.json";
+import plane from "$lib/assets/lottie/plane.json";
 
 export const HelloRoute: React.FC = () => {
   const mainButton = useMainButton();
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [_, setLocation] = useLocation();
 
   useEffect(() => {
@@ -21,7 +20,6 @@ export const HelloRoute: React.FC = () => {
       mainButton.off("click", listener);
       mainButton.hide();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
