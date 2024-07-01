@@ -2,6 +2,7 @@ use bytes::Bytes;
 use tokio::time::Duration;
 
 use crate::db::Db;
+use crate::next_arg;
 use crate::resp::RespValue;
 
 use super::CommandTrait;
@@ -19,63 +20,35 @@ impl Set {
 }
 
 impl CommandTrait for Set {
-    async fn execute(&self, db: &Db, connection: &mut crate::connection::Connection) {
+    async fn execute(&self, db: &Db) -> Option<RespValue> {
         db.set(self.key.clone(), self.value.clone(), self.expire)
             .await;
-        connection
-            .write(RespValue::SimpleString("OK".to_string()))
-            .await;
+
+        Some(RespValue::SimpleString("OK".to_string()))
     }
+}
 
-    fn from_resp(resp: crate::resp::RespValue) -> Result<Self, anyhow::Error> {
-        if let RespValue::Array(arr) = resp {
-            let key_resp = arr[1].clone();
+impl TryFrom<Vec<RespValue>> for Set {
+    type Error = anyhow::Error;
 
-            let key_string = if let RespValue::BulkString(key) = key_resp {
-                String::from_utf8_lossy(&key).to_string()
-            } else {
-                return Err(anyhow::anyhow!("Invalid arguments"));
-            };
+    fn try_from(args: Vec<RespValue>) -> Result<Self, Self::Error> {
+        let mut args = args.into_iter();
 
-            if arr.len() < 2 {
-                return Err(anyhow::anyhow!("Invalid arguments"));
+        let _command = args.next();
+
+        let key = next_arg!(args)?;
+        let value = next_arg!(args)?;
+
+        let expire = next_arg!(args,
+            optional,
+            "ex" => {
+                |v| Duration::from_secs(v)
+            },
+            "px" => {
+                |v| Duration::from_millis(v)
             }
+        );
 
-            let value = match &arr[2] {
-                RespValue::BulkString(value) => Bytes::from(value.to_vec()),
-                _ => {
-                    return Err(anyhow::anyhow!("Invalid arguments"));
-                }
-            };
-
-            let expire = if arr.len() > 4 {
-                match &arr[3] {
-                    RespValue::BulkString(s) => {
-                        match String::from_utf8_lossy(&s).to_lowercase().as_str() {
-                            "ex" => {
-                                let expire_resp = &arr[4].as_integer()?;
-                                Some(Duration::from_secs(*expire_resp as u64))
-                            }
-
-                            "px" => {
-                                let expire_resp = &arr[4].as_integer()?;
-                                Some(Duration::from_millis(*expire_resp as u64))
-                            }
-                            _ => {
-                                return Err(anyhow::anyhow!(
-                                    "Invalid arguments, expected 'ex' or 'px'"
-                                ))
-                            }
-                        }
-                    }
-                    _ => None,
-                }
-            } else {
-                None
-            };
-
-            return Ok(Self::new(key_string, value, expire));
-        }
-        Err(anyhow::anyhow!("Invalid arguments"))
+        return Ok(Self::new(key, value, expire));
     }
 }

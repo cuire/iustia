@@ -1,6 +1,9 @@
+use std::fmt::Display;
+use std::io::Cursor;
 use std::str::FromStr;
 
 use anyhow::Error;
+use bytes::{Buf, Bytes};
 
 const CRLF: &[u8] = b"\r\n";
 
@@ -32,9 +35,8 @@ impl RespValue {
     /// # Returns
     ///
     /// Returns a `Result` containing the parsed `RespValue` if successful, or a `RespParseError` if parsing fails.
-    pub(crate) fn from_bytes(buf: &[u8]) -> Result<RespValue, RespParseError> {
-        let (value, rest) = decode_resp(buf)?;
-        assert!(rest.is_empty());
+    pub(crate) fn from_bytes(buf: &mut Cursor<&[u8]>) -> Result<RespValue, RespParseError> {
+        let value = decode_resp(buf)?;
 
         return Ok(value);
     }
@@ -58,6 +60,125 @@ impl RespValue {
             _ => Err(anyhow::anyhow!("Invalid value")),
         }
     }
+
+    pub fn as_bulk(&self) -> Result<RespValue, Error> {
+        match self {
+            RespValue::SimpleString(string) => {
+                Ok(RespValue::BulkString(string.as_bytes().to_vec()))
+            }
+            _ => Err(anyhow::anyhow!("Invalid value")),
+        }
+    }
+
+    pub fn size(&self) -> usize {
+        // TODO: optimize this to avoid encoding the value
+        let encoded = encode_resp(self);
+        encoded.len()
+    }
+}
+
+// for positional matchers
+impl From<&RespValue> for RespValue {
+    fn from(value: &RespValue) -> Self {
+        value.clone()
+    }
+}
+
+impl From<&str> for RespValue {
+    fn from(s: &str) -> Self {
+        if s.is_empty() {
+            return RespValue::Null;
+        };
+
+        // if string contains any whitespace or newline, treat it as a bulk string
+        if s.contains(|c: char| c.is_whitespace() || c == '\r' || c == '\n') {
+            return RespValue::BulkString(s.as_bytes().to_vec());
+        }
+
+        RespValue::SimpleString(s.to_string())
+    }
+}
+
+impl TryFrom<RespValue> for Bytes {
+    type Error = RespParseError;
+
+    fn try_from(val: RespValue) -> Result<Self, Self::Error> {
+        match val {
+            RespValue::BulkString(b) => Ok(Bytes::from(b)),
+            _ => panic!("Invalid conversion"),
+        }
+    }
+}
+
+impl TryFrom<&RespValue> for String {
+    type Error = RespParseError;
+
+    fn try_from(val: &RespValue) -> Result<Self, Self::Error> {
+        match val {
+            RespValue::SimpleString(s) => Ok(s.clone()),
+            RespValue::SimpleError(e) => Ok(e.clone()),
+            RespValue::Integer(i) => Ok(i.to_string()),
+            RespValue::BulkString(b) => Ok(String::from_utf8_lossy(b).to_string()),
+            _ => panic!("Invalid conversion"),
+        }
+    }
+}
+
+impl TryFrom<RespValue> for String {
+    type Error = RespParseError;
+
+    fn try_from(val: RespValue) -> Result<Self, Self::Error> {
+        match val {
+            RespValue::SimpleString(s) => Ok(s),
+            RespValue::SimpleError(e) => Ok(e),
+            RespValue::Integer(i) => Ok(i.to_string()),
+            RespValue::BulkString(b) => Ok(String::from_utf8_lossy(&b).to_string()),
+            _ => panic!("Invalid conversion"),
+        }
+    }
+}
+
+impl TryFrom<RespValue> for i64 {
+    type Error = RespParseError;
+
+    fn try_from(val: RespValue) -> Result<Self, Self::Error> {
+        match val {
+            RespValue::Integer(i) => Ok(i),
+            RespValue::BulkString(b) => {
+                let val_as_str =
+                    std::str::from_utf8(&b).map_err(|_| RespParseError::InvalidValue)?;
+                val_as_str.parse().map_err(|_| RespParseError::InvalidValue)
+            }
+            _ => panic!("Invalid conversion"),
+        }
+    }
+}
+
+impl TryFrom<RespValue> for u64 {
+    type Error = RespParseError;
+
+    fn try_from(val: RespValue) -> Result<Self, Self::Error> {
+        match val {
+            RespValue::Integer(i) => Ok(i as u64),
+            RespValue::BulkString(b) => {
+                let val_as_str =
+                    std::str::from_utf8(&b).map_err(|_| RespParseError::InvalidValue)?;
+                val_as_str.parse().map_err(|_| RespParseError::InvalidValue)
+            }
+            _ => panic!("Invalid conversion"),
+        }
+    }
+}
+
+impl Display for RespValue {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let buff = encode_resp(self)
+            .iter()
+            .map(|b| *b as char)
+            .collect::<String>();
+
+        write!(f, "{}", buff)
+    }
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -66,19 +187,27 @@ pub enum RespParseError {
     InvalidTypePrefix,
     #[error("No corresponding newline was found for value")]
     MissingNewline,
+    #[error("Buffer is incomplete")]
+    Incomplete,
     #[error("Invalid value was found")]
     InvalidValue,
 }
 
-fn split_at_newline(buf: &[u8]) -> Result<(&[u8], &[u8]), RespParseError> {
-    buf.windows(2)
-        .position(|w| w == CRLF)
-        .map(|i| {
-            let (x, y) = buf.split_at(i);
+fn get_line<'a>(src: &mut Cursor<&'a [u8]>) -> Result<&'a [u8], RespParseError> {
+    let start = src.position() as usize;
+    let end = src.get_ref().len() - 1;
 
-            (x, &y[2..])
-        })
-        .ok_or(RespParseError::MissingNewline)
+    for i in start..end {
+        if src.get_ref()[i] == b'\r' && src.get_ref()[i + 1] == b'\n' {
+            // We found a line, update the position to be *after* the \n
+            src.set_position((i + 2) as u64);
+
+            // Return the line
+            return Ok(&src.get_ref()[start..i]);
+        }
+    }
+
+    Err(RespParseError::Incomplete)
 }
 
 fn parse_buf_to_string(buf: &[u8]) -> Result<String, RespParseError> {
@@ -86,77 +215,112 @@ fn parse_buf_to_string(buf: &[u8]) -> Result<String, RespParseError> {
     Ok(val_as_str.to_string())
 }
 
-fn parse_buf_to<T: FromStr>(buf: &[u8]) -> Result<T, RespParseError> {
-    let val_as_str = std::str::from_utf8(buf).map_err(|_| RespParseError::InvalidValue)?;
+fn parse_buf_to<T: FromStr>(buf: &mut Cursor<&[u8]>) -> Result<T, RespParseError> {
+    let line = get_line(buf)?;
+    let val_as_str = std::str::from_utf8(line).map_err(|_| RespParseError::InvalidValue)?;
     val_as_str.parse().map_err(|_| RespParseError::InvalidValue)
 }
 
-fn decode_resp(buf: &[u8]) -> Result<(RespValue, &[u8]), RespParseError> {
-    let (discriminator, rest) = buf.split_first().unwrap();
+fn decode_resp(buf: &mut Cursor<&[u8]>) -> Result<RespValue, RespParseError> {
+    if !buf.has_remaining() {
+        return Err(RespParseError::Incomplete);
+    }
+
+    let discriminator = buf.get_u8();
+
     match discriminator {
         // Simple String: `+<data>\r\n`
         b'+' => {
-            let (val, rest) = split_at_newline(rest)?;
-            let val_as_string = parse_buf_to_string(val)?;
-            Ok((RespValue::SimpleString(val_as_string), rest))
+            let val = get_line(buf)?;
+            let string = parse_buf_to_string(val)?;
+            Ok(RespValue::SimpleString(string))
         }
 
         // Simple Error: `-<error>\r\n`
         b'-' => {
-            let (val, rest) = split_at_newline(rest)?;
-            let val_as_string = parse_buf_to_string(val)?;
-            Ok((RespValue::SimpleError(val_as_string), rest))
+            let val = get_line(buf)?;
+            let string = parse_buf_to_string(val)?;
+            Ok(RespValue::SimpleError(string))
         }
 
         // Integer: `:[<+|->]<value>\r\n`
         b':' => {
-            let (val, rest) = split_at_newline(rest)?;
-            let int = parse_buf_to(val)?;
-            Ok((RespValue::Integer(int), rest))
+            let int = parse_buf_to(buf)?;
+            Ok(RespValue::Integer(int))
         }
 
         // Bulk String: `$<length>\r\n<data>\r\n`
         b'$' => {
-            let (len, rest) = split_at_newline(rest)?;
+            // let (len, rest) = split_at_newline(rest)?;
 
             // handle bulk string null: `$-1\r\n`
-            if len[0] == b'-' {
-                return if len[1] == b'1' {
-                    Ok((RespValue::Null, rest))
+            if buf.chunk()[0] == b'-' {
+                return if buf.chunk()[1] == b'1' {
+                    Ok(RespValue::Null)
                 } else {
                     Err(RespParseError::InvalidValue)
                 };
             }
 
-            let len = parse_buf_to::<u64>(len)?;
+            let len = parse_buf_to::<usize>(buf)?;
 
-            let (data, rest) = rest.split_at(len as usize);
-
-            if rest.len() < 2 || &rest[..2] != CRLF {
-                return Err(RespParseError::MissingNewline);
+            if buf.remaining() < len {
+                return Err(RespParseError::Incomplete);
             }
 
-            Ok((RespValue::BulkString(Vec::from(data)), &rest[2..]))
+            // 16 is the length of the RDB file header and checksum combined
+            if buf.remaining() > 16 {
+                if let Some(rdb) = try_parse_rdb(buf, len) {
+                    buf.advance(len);
+                    return Ok(rdb);
+                }
+            }
+
+            if buf.remaining() < len + 2 {
+                return Err(RespParseError::Incomplete);
+            }
+
+            let data = Bytes::copy_from_slice(&buf.chunk()[..len]);
+
+            buf.advance(len + 2);
+
+            Ok(RespValue::BulkString(Vec::from(data)))
         }
 
         // Array: *<number-of-elements>\r\n<element-1>...<element-n>
         b'*' => {
-            let (len, mut rest) = split_at_newline(rest)?;
-            let len = parse_buf_to::<u64>(len)?;
-
-            let mut array = Vec::with_capacity(len as usize);
+            let len = parse_buf_to::<usize>(buf)?;
+            let mut array = Vec::with_capacity(len);
 
             for _ in 0..len {
-                let (next, next_rest) = decode_resp(rest)?;
+                let next = decode_resp(buf)?;
                 array.push(next);
-                rest = next_rest;
             }
 
-            Ok((RespValue::Array(array), rest))
+            Ok(RespValue::Array(array))
         }
 
         _ => Err(RespParseError::InvalidTypePrefix),
     }
+}
+
+fn try_parse_rdb(buf: &mut Cursor<&[u8]>, len: usize) -> Option<RespValue> {
+    // if start is REDIS (82, 69, 68, 73, 83) and end is FF + {8 bytes of checksum}
+
+    if buf.chunk()[0..5] == [82, 69, 68, 73, 83] {
+        let end = &buf.chunk()[len - 9..len];
+        if end[0] == 255 {
+            // TODO: check checksum
+
+            // TODO: parse RDB file
+
+            // TODO: make a new RespValue::Rdb type
+
+            return Some(RespValue::BulkString(buf.chunk()[..len].to_vec()));
+        }
+    }
+
+    None
 }
 
 fn encode_resp(val: &RespValue) -> Vec<u8> {
@@ -195,42 +359,44 @@ mod tests {
 
     #[test]
     fn test_parse_message_simple_string() {
-        let buf = b"+Hello, World!\r\n";
+        let buf: &mut Cursor<&[u8]> = &mut Cursor::new(b"+Hello, World!\r\n");
         let expected = RespValue::SimpleString("Hello, World!".to_string());
         assert_eq!(RespValue::from_bytes(buf).unwrap(), expected);
     }
 
     #[test]
     fn test_parse_message_simple_error() {
-        let buf = b"-Error occurred\r\n";
+        let buf: &mut Cursor<&[u8]> = &mut Cursor::new(b"-Error occurred\r\n");
         let expected = RespValue::SimpleError("Error occurred".to_string());
         assert_eq!(RespValue::from_bytes(buf).unwrap(), expected);
     }
 
     #[test]
     fn test_parse_message_integer() {
-        let buf = b":42\r\n";
+        let buf: &mut Cursor<&[u8]> = &mut Cursor::new(b":42\r\n");
         let expected = RespValue::Integer(42);
         assert_eq!(RespValue::from_bytes(buf).unwrap(), expected);
     }
 
     #[test]
     fn test_parse_message_bulk_string() {
-        let buf = b"$5\r\nHello\r\n";
+        let buf: &mut Cursor<&[u8]> = &mut Cursor::new(b"$5\r\nHello\r\n");
         let expected = RespValue::BulkString(b"Hello".to_vec());
         assert_eq!(RespValue::from_bytes(buf).unwrap(), expected);
     }
 
     #[test]
     fn test_parse_message_null() {
-        let buf = b"$-1\r\n";
+        let buf: &mut Cursor<&[u8]> = &mut Cursor::new(b"$-1\r\n");
         let expected = RespValue::Null;
         assert_eq!(RespValue::from_bytes(buf).unwrap(), expected);
     }
 
     #[test]
     fn test_parse_message_array() {
-        let buf = b"*3\r\n+Hello\r\n:42\r\n$5\r\nWorld\r\n";
+        let buf: &[u8] = b"*3\r\n+Hello\r\n:42\r\n$5\r\nWorld\r\n";
+        let buf = &mut Cursor::new(buf);
+
         let expected = RespValue::Array(vec![
             RespValue::SimpleString("Hello".to_string()),
             RespValue::Integer(42),
@@ -287,37 +453,83 @@ mod tests {
 
     #[test]
     fn test_parse_message_invalid_type_prefix() {
-        let buf = b"!Hello, World!\r\n";
+        let buf: &mut Cursor<&[u8]> = &mut Cursor::new(b"!Hello, World!\r\n");
+
         assert!(RespValue::from_bytes(buf).is_err());
     }
 
     #[test]
     fn test_parse_message_missing_newline() {
-        let buf = b"+Hello, World!";
+        let buf: &mut Cursor<&[u8]> = &mut Cursor::new(b"+Hello, World!");
+
         assert!(RespValue::from_bytes(buf).is_err());
     }
 
     #[test]
     fn test_parse_message_invalid_value() {
-        let buf = b":Hello, World!\r\n";
+        let buf: &mut Cursor<&[u8]> = &mut Cursor::new(b":Hello, World!\r\n");
+
         assert!(RespValue::from_bytes(buf).is_err());
     }
 
     #[test]
     fn test_parse_message_invalid_value_bulk_string() {
-        let buf = b"$5\r\nHello";
+        let buf: &mut Cursor<&[u8]> = &mut Cursor::new(b"$5\r\nHello");
+
         assert!(RespValue::from_bytes(buf).is_err());
     }
 
     #[test]
     fn test_parse_message_invalid_value_bulk_string_null() {
-        let buf = b"$-2\r\n";
+        let buf: &mut Cursor<&[u8]> = &mut Cursor::new(b"$-2\r\n");
+
         assert!(RespValue::from_bytes(buf).is_err());
     }
 
     #[test]
     fn test_parse_message_invalid_value_array() {
-        let buf = b"*3\r\n+Hello\r\n:42\r\n$5\r\nWorld";
+        let buf: &[u8] = b"*3\r\n+Hello\r\n:42\r\n$5\r\nWorld";
+        let buf = &mut Cursor::new(buf);
+
         assert!(RespValue::from_bytes(buf).is_err());
+    }
+
+    #[test]
+    fn test_multiple_parse_message() {
+        let buf: &[u8] = b"+Hello, World!\r\n-Error occurred\r\n:42\r\n$5\r\nHello\r\n";
+        let buf = &mut Cursor::new(buf);
+
+        let expected = RespValue::SimpleString("Hello, World!".to_string());
+        assert_eq!(RespValue::from_bytes(buf).unwrap(), expected);
+
+        let expected = RespValue::SimpleError("Error occurred".to_string());
+        assert_eq!(RespValue::from_bytes(buf).unwrap(), expected);
+
+        let expected = RespValue::Integer(42);
+        assert_eq!(RespValue::from_bytes(buf).unwrap(), expected);
+
+        let expected = RespValue::BulkString(b"Hello".to_vec());
+        assert_eq!(RespValue::from_bytes(buf).unwrap(), expected);
+    }
+
+    #[test]
+    fn test_parse_rdb_file() {
+        let hex_string = "524544495330303131fa0972656469732d76657205372e322e30fa0a72656469732d62697473c040fa056374696d65c26d08bc65fa08757365642d6d656dc2b0c41000fa08616f662d62617365c000fff06e3bfec0ff5aa2";
+        let empty_file_payload = (0..hex_string.len())
+            .step_by(2)
+            .map(|i| u8::from_str_radix(&hex_string[i..i + 2], 16).expect("hex_string is invalid"))
+            .collect::<Vec<_>>();
+
+        let len = empty_file_payload.len();
+
+        let payload_len = format!("${}\r\n", len).as_bytes().to_vec();
+
+        let data = [payload_len, empty_file_payload].concat();
+
+        let buf: &mut Cursor<&[u8]> = &mut Cursor::new(&data);
+
+        let resp = RespValue::from_bytes(buf);
+
+        assert!(resp.is_ok());
     }
 }

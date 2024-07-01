@@ -1,3 +1,5 @@
+use crate::{next_arg, resp::RespValue};
+
 use super::CommandTrait;
 
 pub struct Echo {
@@ -11,21 +13,25 @@ impl Echo {
 }
 
 impl CommandTrait for Echo {
-    async fn execute(&self, _: &crate::db::Db, connection: &mut crate::connection::Connection) {
-        let response = crate::resp::RespValue::BulkString(self.message.as_bytes().to_vec());
-        connection.write(response).await;
+    async fn execute(&self, _: &crate::db::Db) -> Option<RespValue> {
+        Some(crate::resp::RespValue::BulkString(
+            self.message.as_bytes().to_vec(),
+        ))
     }
 
-    fn from_resp(resp: crate::resp::RespValue) -> Result<Self, anyhow::Error> {
-        if let crate::resp::RespValue::Array(arr) = resp {
-            if arr.len() > 1 {
-                let message = arr[1].clone();
-                if let crate::resp::RespValue::BulkString(message) = message {
-                    let message = String::from_utf8_lossy(&message).to_string();
-                    return Ok(Self::new(message));
-                }
-            };
-        }
-        Err(anyhow::anyhow!("Invalid arguments"))
+    // fn from_resp(resp: crate::resp::RespValue) -> Result<Self, anyhow::Error> {
+}
+
+impl TryFrom<Vec<crate::resp::RespValue>> for Echo {
+    type Error = anyhow::Error;
+
+    fn try_from(args: Vec<crate::resp::RespValue>) -> Result<Self, Self::Error> {
+        let mut args = args.into_iter();
+
+        let _command = args.next();
+
+        let message = next_arg!(args)?;
+
+        return Ok(Self::new(message));
     }
 }

@@ -1,3 +1,5 @@
+use crate::resp::RespValue;
+
 use super::CommandTrait;
 
 pub struct Ping {
@@ -11,28 +13,30 @@ impl Ping {
 }
 
 impl CommandTrait for Ping {
-    async fn execute(&self, _: &crate::db::Db, connection: &mut crate::connection::Connection) {
+    async fn execute(&self, _: &crate::db::Db) -> Option<RespValue> {
         let response = match &self.message {
-            Some(message) => crate::resp::RespValue::BulkString(message.as_bytes().to_vec()),
-            None => crate::resp::RespValue::SimpleString("PONG".to_string()),
+            Some(message) => RespValue::BulkString(message.as_bytes().to_vec()),
+            None => RespValue::SimpleString("PONG".to_string()),
         };
-        connection.write(response).await;
-    }
 
-    fn from_resp(resp: crate::resp::RespValue) -> Result<Self, anyhow::Error> {
-        if let crate::resp::RespValue::Array(arr) = resp {
-            let message = if arr.len() > 1 {
-                let message = arr[1].clone();
-                if let crate::resp::RespValue::BulkString(message) = message {
-                    Some(String::from_utf8_lossy(&message).to_string())
-                } else {
-                    return Err(anyhow::anyhow!("Invalid arguments"));
-                }
-            } else {
-                None
-            };
-            return Ok(Self::new(message));
-        }
-        Err(anyhow::anyhow!("Invalid arguments"))
+        Some(response)
+    }
+}
+
+impl TryFrom<Vec<RespValue>> for Ping {
+    type Error = anyhow::Error;
+
+    fn try_from(args: Vec<RespValue>) -> Result<Self, Self::Error> {
+        let mut args = args.into_iter();
+
+        let _command = args.next();
+
+        let message = match args.next() {
+            Some(RespValue::BulkString(message)) => Some(String::from_utf8(message)?),
+            Some(_) => return Err(anyhow::anyhow!("Invalid argument")),
+            None => None,
+        };
+
+        return Ok(Self::new(message));
     }
 }
