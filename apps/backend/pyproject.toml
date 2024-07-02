@@ -36,6 +36,9 @@ exclude = [
     "migrations",
 ]
 
+[tool.poetry.scripts]
+generate-openapi = "manage spectacular --color --file schema.yml"
+
 [tool.poetry]
 name = "iustia-backend"
 version = "0.1.0"
@@ -53,9 +56,11 @@ django-filter = "^24.2"
 djangorestframework = "^3.15.1"
 drf-access-policy = "^1.5.0"
 gunicorn = "^21.2.0"
+psycopg2-binary = "^2.9.9"
 psycopg2 = "^2.9.9"
 pydantic = "^2.7.0"
 python-decouple = "^3.8"
+drf-spectacular = "^0.27.2"
 
 [tool.poetry.group.dev.dependencies]
 mypy = "^1.9.0"

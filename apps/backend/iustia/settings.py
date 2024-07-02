@@ -21,6 +21,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "corsheaders",
     "django_filters",
+    "drf_spectacular",
     "rest_framework",
     "rest_access_policy",
     "iustia.core",
@@ -113,6 +114,7 @@ TRUSTED_IMAGE_HOSTS = config(
 REST_FRAMEWORK = {
     "DEFAULT_FILTER_BACKENDS": ("django_filters.rest_framework.DjangoFilterBackend",),
     "DEFAULT_PAGINATION_CLASS": "iustia.core.pagination.StandardResultsSetPagination",
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "PAGE_SIZE": config("REST_PAGE_SIZE", default=30, cast=int),
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "iustia.core.authentication.TelegramMiniAppAuth",
@@ -128,3 +130,10 @@ CORS_ALLOW_ALL_ORIGINS = config("CORS_ALLOW_ALL_ORIGINS", default=False, cast=bo
 
 # Used for Telegram Mini App authentication validation
 TELEGRAM_BOT_TOKEN = config("TELEGRAM_BOT_TOKEN")
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Iustia API",
+    "DESCRIPTION": "Api for job search and recruitment",
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+}

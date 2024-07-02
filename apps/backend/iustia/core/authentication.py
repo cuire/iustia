@@ -9,6 +9,7 @@ import pydantic.alias_generators
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractBaseUser
+from drf_spectacular.extensions import OpenApiAuthenticationExtension
 from rest_framework import HTTP_HEADER_ENCODING
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.request import Request
@@ -128,3 +129,15 @@ class TelegramMiniAppAuth(BaseAuthentication):
             return None
 
         return pydantic.TypeAdapter(TMAAuthData).validate_json(parsed_data["user"])
+
+
+class TelegramMiniAppAuthScheme(OpenApiAuthenticationExtension):
+    target_class = TelegramMiniAppAuth
+    name = "TelegramMiniAppAuth"
+
+    def get_security_definition(self, auto_schema):
+        return {
+            "type": "apiKey",
+            "in": "header",
+            "name": "tma",
+        }
